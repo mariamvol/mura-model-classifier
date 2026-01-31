@@ -1,66 +1,73 @@
 from __future__ import annotations
-
 import argparse
 from pathlib import Path
-
-import pandas as pd
 import torch
-from torch.utils.data import DataLoader
 
-from src.model import load_model_from_checkpoint, ModelConfig, predict_proba
-from src.data.datasets import ImageDataset
-from src.data.transforms import build_transforms
+from .model import build_densenet121, load_checkpoint
+from .utils import (
+    AREAS, DEFAULT_CKPT_NAME,
+    get_default_cache_dir, build_preprocess, load_image, download_url
+)
 
+def parse_args():
+    p = argparse.ArgumentParser(description="MURA fracture inference (DenseNet121).")
+    p.add_argument("--image", required=True, help="Path to an image (png/jpg).")
+    p.add_argument("--area", required=True, choices=AREAS, help="Anatomical area.")
+    p.add_argument("--ckpt", default=None, help="Path to checkpoint .pt (optional).")
 
-def list_images(path: Path):
-    exts = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
-    if path.is_file():
-        return [str(path)]
-    imgs = []
-    for p in path.rglob("*"):
-        if p.is_file() and p.suffix.lower() in exts and not p.name.startswith("._"):
-            imgs.append(str(p))
-    return sorted(imgs)
+    # опционально: автоматом скачать веса
+    p.add_argument("--weights-url", default=None, help="Base URL to download weights from (optional).")
+    p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    p.add_argument("--threshold", type=float, default=0.5)
+    return p.parse_args()
 
+@torch.no_grad()
+def predict_one(model, img_path: str, device: str = "cpu", img_size: int = 224) -> float:
+    tfm = build_preprocess(img_size)
+    img = load_image(img_path)
+    x = tfm(img).unsqueeze(0).to(device)
+    logit = model(x).squeeze(0).squeeze(0)
+    prob = torch.sigmoid(logit).item()
+    return float(prob)
+
+def resolve_checkpoint(area: str, ckpt_arg: str | None, weights_url: str | None) -> Path:
+    if ckpt_arg:
+        return Path(ckpt_arg)
+
+    cache = get_default_cache_dir()
+    fname = DEFAULT_CKPT_NAME[area]
+    local = cache / fname
+    if local.exists():
+        return local
+
+    if not weights_url:
+        raise FileNotFoundError(
+            f"Checkpoint not found: {local}\n"
+            f"Provide --ckpt PATH or --weights-url BASE_URL"
+        )
+
+    # weights_url = например: https://github.com/<you>/<repo>/releases/download/v0.1.0/
+    url = weights_url.rstrip("/") + "/" + fname
+    download_url(url, local)
+    return local
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--ckpt", type=str, required=True, help="path to .pt checkpoint")
-    ap.add_argument("--input", type=str, required=True, help="image file OR folder")
-    ap.add_argument("--out_csv", type=str, default="preds.csv")
-    ap.add_argument("--batch_size", type=int, default=16)
-    ap.add_argument("--img_size", type=int, default=224)
-    ap.add_argument("--device", type=str, default="cuda")
-    args = ap.parse_args()
+    args = parse_args()
+    device = args.device
 
-    device = torch.device(args.device if torch.cuda.is_available() and args.device.startswith("cuda") else "cpu")
+    ckpt_path = resolve_checkpoint(args.area, args.ckpt, args.weights_url)
 
-    cfg = ModelConfig(img_size=args.img_size)
-    model, ckpt = load_model_from_checkpoint(args.ckpt, device=device, cfg=cfg, strict=False)
+    model = build_densenet121(device=device)
+    _ = load_checkpoint(model, str(ckpt_path), device=device)
 
-    inp = Path(args.input)
-    paths = list_images(inp)
-    if not paths:
-        raise SystemExit(f"No images found in: {inp}")
+    prob = predict_one(model, args.image, device=device)
+    pred = int(prob >= args.threshold)
 
-    tfm = build_transforms(img_size=args.img_size, train=False)
-    ds = ImageDataset(paths, labels=None, transform=tfm, return_path=True)
-    dl = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=0)
-
-    rows = []
-    model.eval()
-    with torch.no_grad():
-        for xb, batch_paths in dl:
-            xb = xb.to(device)
-            probs = predict_proba(model, xb).detach().cpu().numpy().tolist()
-            for p, pr in zip(batch_paths, probs):
-                rows.append({"path": p, "prob_positive": float(pr)})
-
-    df = pd.DataFrame(rows)
-    df.to_csv(args.out_csv, index=False)
-    print(df.head(10).to_string(index=False))
-    print(f"\nSaved: {args.out_csv} (n={len(df)})")
-
+    print(f"area={args.area}")
+    print(f"image={args.image}")
+    print(f"ckpt={ckpt_path}")
+    print(f"prob_fracture={prob:.4f}")
+    print(f"pred={pred} (threshold={args.threshold})")
 
 if __name__ == "__main__":
     main()
