@@ -1,7 +1,100 @@
-# mura-model-classifier
-PyTorch model for MURA classification
+# MURA Model Classifier
 
-## Inference
+Automated fracture detection in musculoskeletal X-ray images from the **MURA dataset**
+using deep learning and computer vision techniques.
+
+This repository provides:
+- a ready-to-use **PyTorch inference package**,
+- pretrained **per-anatomical-area models**,
+- and a full **analytical report** describing the methodology and experiments.
+
+The project was developed as an academic research work and is intended for
+**educational and research purposes only**.
+
+---
+
+## Project Overview
+
+Musculoskeletal Radiographs (MURA) present several challenges for automated analysis:
+- high intra-class variability,
+- subtle fracture patterns,
+- strong anatomical differences between body parts.
+
+To address this, the project follows a **per-area modeling strategy**:
+each anatomical region is trained with its own dedicated classifier.
+
+### Supported anatomical areas
+- `XR_ELBOW`
+- `XR_FINGER`
+- `XR_FOREARM`
+- `XR_HAND`
+- `XR_HUMERUS`
+- `XR_SHOULDER`
+- `XR_WRIST`
+
+Each area has an independently trained model and checkpoint.
+
+---
+
+## Methodology Summary
+
+The full methodology is described in detail in the analytical note, but the main steps are:
+
+1. **Dataset preparation**
+   - MURA dataset with image-level and study-level labels
+   - Explicit separation by anatomical area
+   - Study-aware aggregation for evaluation
+
+2. **Baseline architecture**
+   - DenseNet-121 pretrained on ImageNet
+   - Binary classification head (fracture / no fracture)
+
+3. **Training strategy**
+   - Area-specific training
+   - Class imbalance handling
+   - Two-phase fine-tuning strategy
+   - Best model selection based on validation metrics
+
+4. **Hyperparameter optimization**
+   - Automated tuning using Optuna
+   - Separate studies per anatomical area
+
+5. **Evaluation**
+   - Image-level metrics
+   - Study-level aggregation and AUC evaluation
+
+6. **Interpretability**
+   - Grad-CAM based visualization
+   - Qualitative localization analysis of fracture regions
+
+7. **Advanced experiments (research stage)**
+   - CAM-based regularization
+   - Hybrid architectures (DenseNet + Transformer backbones)
+
+---
+
+## Analytical Note
+
+A detailed analytical report describing the dataset analysis, experimental setup,
+training strategies, evaluation protocols, and results is available here:
+
+**[Analytical Note (PDF)](docs/Analytical_Note_MURA_Vol_2025.pdf)**
+
+The document includes:
+- MURA dataset analysis,
+- per-area classification rationale,
+- DenseNet baseline and improvements,
+- Optuna hyperparameter optimization,
+- CAM / Grad-CAM interpretability analysis,
+- two-phase training strategy,
+- hybrid DenseNet + Transformer experiments,
+- quantitative and qualitative results.
+
+---
+
+## Installation
+
+Install directly from GitHub:
 
 ```bash
-python -m src.infer --ckpt path/to/XR_WRIST_FINAL_best.pt --input path/to/image_or_folder --out_csv preds.csv
+pip install git+https://github.com/mariamvol/mura-model-classifier.git
