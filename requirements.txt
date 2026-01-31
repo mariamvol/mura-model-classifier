@@ -1,7 +1,12 @@
 torch
 torchvision
+timm
 numpy
-Pillow
-opencv-python
-tqdm
+pandas
 scikit-learn
+matplotlib
+opencv-python
+Pillow
+tqdm
+optuna
+PyYAML
