@@ -5,7 +5,7 @@ import torch
 
 from .model import build_densenet121, load_checkpoint
 from .utils import (
-    AREAS, DEFAULT_CKPT_NAME,
+    AREAS, DEFAULT_CKPT_NAME, WEIGHTS_URL_BASE,
     get_default_cache_dir, build_preprocess, load_image, download_url
 )
 
@@ -15,8 +15,7 @@ def parse_args():
     p.add_argument("--area", required=True, choices=AREAS, help="Anatomical area.")
     p.add_argument("--ckpt", default=None, help="Path to checkpoint .pt (optional).")
 
-    # опционально: автоматом скачать веса
-    p.add_argument("--weights-url", default=None, help="Base URL to download weights from (optional).")
+    p.add_argument("--weights-url", default=WEIGHTS_URL_BASE, help="Base URL to download weights from (GitHub Releases).",)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--threshold", type=float, default=0.5)
     return p.parse_args()
@@ -41,12 +40,8 @@ def resolve_checkpoint(area: str, ckpt_arg: str | None, weights_url: str | None)
         return local
 
     if not weights_url:
-        raise FileNotFoundError(
-            f"Checkpoint not found: {local}\n"
-            f"Provide --ckpt PATH or --weights-url BASE_URL"
-        )
+        raise FileNotFoundError(f"Checkpoint not found and weights_url is None: {local}")
 
-    # weights_url = например: https://github.com/<you>/<repo>/releases/download/v0.1.0/
     url = weights_url.rstrip("/") + "/" + fname
     download_url(url, local)
     return local
