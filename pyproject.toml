@@ -24,3 +24,8 @@ dependencies = [
 [project.scripts]
 mura-infer = "mura_model_classifier.infer:main"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
