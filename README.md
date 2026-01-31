@@ -138,7 +138,7 @@ mura-infer \
 The command prints:
 - predicted fracture probability (sigmoid output),
 - binary prediction using a configurable threshold (default: 0.5).
-- 
+  
 Example output:
 ```
 area=XR_WRIST
