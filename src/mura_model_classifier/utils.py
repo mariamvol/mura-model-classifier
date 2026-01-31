@@ -13,6 +13,8 @@ AREAS = ["XR_ELBOW","XR_FINGER","XR_FOREARM","XR_HAND","XR_HUMERUS","XR_SHOULDER
 
 DEFAULT_CKPT_NAME = {a: f"{a}_FINAL_best.pt" for a in AREAS}
 
+WEIGHTS_URL_BASE = "https://github.com/mariamvol/mura-model-classifier/releases/download/v0.1.0"
+
 def get_default_cache_dir() -> Path:
     # ~/.cache/mura-model-classifier
     base = Path(os.path.expanduser("~")) / ".cache" / "mura-model-classifier"
