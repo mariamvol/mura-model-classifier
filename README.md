@@ -98,3 +98,76 @@ Install directly from GitHub:
 
 ```bash
 pip install git+https://github.com/mariamvol/mura-model-classifier.git
+```
+
+---
+
+## Requirements:
+
+- Python ≥ 3.9
+- PyTorch
+- torchvision
+- NumPy, pandas, scikit-learn
+
+---
+
+## Inference Usage
+### Single image inference
+```
+mura-infer \
+  --image path/to/image.png \
+  --area XR_WRIST
+```
+On first run, the corresponding pretrained weights will be automatically downloaded
+from the GitHub release and cached locally.
+
+---
+
+## Using custom checkpoint
+```
+mura-infer \
+  --image path/to/image.png \
+  --area XR_WRIST \
+  --ckpt /path/to/XR_WRIST_FINAL_best.pt
+```
+
+---
+
+## Output
+
+The command prints:
+- predicted fracture probability (sigmoid output),
+- binary prediction using a configurable threshold (default: 0.5).
+- 
+Example output:
+```
+area=XR_WRIST
+prob_fracture=0.8731
+pred=1
+```
+
+---
+
+## Model Details
+
+- Architecture: DenseNet-121
+- Input resolution: 224 × 224
+- Normalization: ImageNet statistics
+- Output: single logit → sigmoid probability
+
+Each anatomical area uses its own independently trained model.
+
+---
+
+## Disclaimer
+
+This project is provided for research and educational purposes only.
+
+It is **not a medical device** and must not be used for clinical decision-making
+or diagnostic purposes.
+
+---
+
+## License
+
+This project is released under the MIT License.
