@@ -1,1 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mura-model-classifier"
+version = "0.1.0"
+description = "MURA fracture classifier (DenseNet121) with per-area checkpoints"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "mariamvol"}]
+dependencies = [
+  "numpy",
+  "pandas",
+  "pillow",
+  "tqdm",
+  "scikit-learn",
+  "matplotlib",
+  "torch",
+  "torchvision",
+]
+
+[project.scripts]
+mura-infer = "mura_model_classifier.infer:main"
 
